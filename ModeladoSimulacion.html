@@ -1,0 +1,222 @@
+<html lang="en" >
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css">
+  
+</head>
+<body ng-app="MySApp" ng-cloak>
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-animate.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-aria.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-messages.min.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.js"></script>
+  
+  <script src="https://unpkg.com/mathjs@5.10.3/dist/math.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
+  
+  <script type="text/javascript">    
+    var app = angular.module('MySApp', ['ngMaterial', 'ngMessages']);
+	
+	app.controller('MySAppCtrl', function($scope, $window) {
+	
+	  
+	   $scope.calc = function () {
+	   
+		  $scope.drawFx($scope.fx, $scope.a, $scope.b);
+		  $scope.integralsK = [];
+		  $scope.integralsIK = [];
+		  $scope.n1 = 0;
+		  $scope.currentI = 0;
+		  
+		  $scope.randomPointsGreen = {};
+		  $scope.randomPointsGreen.x = [];
+		  $scope.randomPointsGreen.y = [];
+		  $scope.randomPointsGreen.mode = 'markers';
+		  $scope.randomPointsGreen.type = 'scatter';
+		  $scope.randomPointsGreen.color = 'green';
+		  $scope.randomPointsGreen.name = 'Aciertos';
+		  
+		  $scope.randomPointsRed = {};
+		  $scope.randomPointsRed.x = [];
+		  $scope.randomPointsRed.y = [];
+		  $scope.randomPointsRed.mode = 'markers';
+		  $scope.randomPointsRed.type = 'scatter';
+		  $scope.randomPointsRed.color = 'red';
+		  $scope.randomPointsRed.name = 'Errores';
+		  
+		  for(var k=1; k <= $scope.n; k++) {
+			  
+			   setTimeout(function(kN) {    
+					var randomPoint = $scope.getRandomPoint();
+				    $scope.isInFunction(randomPoint);
+			        $scope.updateFx($scope.fx, $scope.a, $scope.b);
+			        $scope.calculateI(kN);
+				    $scope.updateIkGraph();
+				}, 250, k); 
+				
+		  }
+		  
+	   };
+	   
+	   $scope.drawFx = function(fx, a, b) {
+			try {
+			  const expr = math.compile(fx);
+			  $scope.mathFunction = expr;
+			
+			  b = parseFloat(b) + parseFloat('0.01');
+			  const xValues = math.range(a, b, 0.1).toArray();
+			  const yValues = xValues.map(function (x) {
+				return expr.eval({x: x});
+			  })
+
+			  const points = {
+				x: xValues,
+				y: yValues,
+				type: 'scatter'
+			  };
+			  points.name = 'F(x)';
+			  
+			  var max = math.max(yValues);
+		      var min = math.min(yValues);
+			  
+			  $scope.c = max;
+			  $scope.cmin = min;
+			  
+			  const pointsRectangle = $scope.getRectangle();
+			  const data = [points, pointsRectangle, $scope.randomPointsGreen, $scope.randomPointsRed];
+			  
+			  Plotly.update('fxPlot', data);
+			  
+			} catch (err) {
+			  
+			}
+	   };
+	   
+	   $scope.updateFx = function(fx, a, b) {
+			try {
+			  const expr = math.compile(fx);
+			  $scope.mathFunction = expr;
+
+			  b = parseFloat(b) + parseFloat('0.01');
+			  const xValues = math.range(a, b, 0.01).toArray();
+			  const yValues = xValues.map(function (x) {
+				return expr.eval({x: x});
+			  })
+
+			  const points = {
+				x: xValues,
+				y: yValues,
+				type: 'scatter'
+			  };
+			  points.name = 'F(x)';
+			  
+			  const pointsRectangle = $scope.getRectangle();
+			  const data = [points, pointsRectangle, $scope.randomPointsGreen, $scope.randomPointsRed];
+			  
+			  Plotly.react('fxPlot', data);
+			}
+			catch (err) {
+			  
+			}
+	   };
+	   
+	   $scope.getRectangle = function() {
+	     
+		  const points = {};
+		  points.type = 'scatter';
+		  points.x = [$scope.a,$scope.a,$scope.b,$scope.b];
+		  points.y = [$scope.cmin,$scope.c,$scope.c,$scope.cmin];
+		  points.name = 'R';
+		  
+		  return points;
+	   };
+	  
+	   $scope.getRandomPoint = function () {
+		  var x = Math.random() * ($scope.b - $scope.a) + parseInt($scope.a, 10);
+		  var y = Math.random() * ($scope.c - $scope.cmin) + parseFloat($scope.cmin);
+		  var point = {};
+		  point.x = x;
+		  point.y = y;
+	
+		  return point;
+	   };
+
+	   $scope.isInFunction = function (randomPoint) {
+		   var fderandom = $scope.mathFunction.eval({x: randomPoint.x});
+		   
+		   if((randomPoint.y <= fderandom && randomPoint.y >= 0) || (randomPoint.y >= fderandom && fderandom < 0 && randomPoint.y <= 0))  {
+			  $scope.randomPointsGreen.x.push(randomPoint.x);
+			  $scope.randomPointsGreen.y.push(randomPoint.y);
+			  $scope.n1++; 
+		   } else {
+			  $scope.randomPointsRed.x.push(randomPoint.x);
+			  $scope.randomPointsRed.y.push(randomPoint.y);
+		   }
+		    
+	   };
+	   
+	   $scope.calculateI = function (k) {
+		  var area = ($scope.b - $scope.a) * ($scope.c - $scope.cmin);
+		  var ik = ($scope.n1 / k) * area;
+		  $scope.integralsK.push(k);
+		  $scope.integralsIK.push(ik);
+		  $scope.currentI = ik.toFixed(2);
+		  $scope.$apply()
+	   };
+	 
+	   $scope.updateIkGraph = function() {
+			try {
+			  
+			  const ikPoints = {
+				x: $scope.integralsK,
+				y: $scope.integralsIK,
+				type: 'scatter'
+			  };
+			  ikPoints.name = 'Ik';
+			  
+			  const data = [ikPoints];
+			  
+			  Plotly.newPlot('ikPlot', data);
+			}
+			catch (err) {
+			  
+			}
+	   };
+	   
+	   $scope.reset = function () {
+		  $scope.n1 = 0;
+		  $scope.integralsK = [];
+		  $scope.integralsIK = [];
+	   };
+	   
+	   $scope.reset();
+	   
+	   //$scope.fx = 'sin(x)';
+	   $scope.fx = 'sin(x^2)';
+	   //$scope.fx = 'x^2';
+	   $scope.a = -5;
+	   $scope.b = 5;
+	   $scope.n = 150;
+	   
+	});
+  </script>
+  
+  <div id="container" ng-controller="MySAppCtrl">
+	<div id="header">	
+		<input matInput placeholder="F(x)" ng-model="fx">
+		<input matInput placeholder="n" ng-model="n"> 
+		<input matInput placeholder="a" ng-model="a">
+		<input matInput placeholder="b" ng-model="b">
+		<button type="button" ng-click="calc()">Calcular</button>
+	</div>
+	<div id="content">
+		<div id="fxPlot"></div>
+		<div>Ik: {{currentI}}</div>
+		<div id="ikPlot"></div>
+	</div>
+  </div>
+
+</body>
+</html>
