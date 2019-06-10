@@ -2,6 +2,7 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
   
 </head>
 <body ng-app="MySApp" ng-cloak>
@@ -23,11 +24,12 @@
 	
 	  
 	   $scope.calc = function () {
-	   
+		  
 		  $scope.drawFx($scope.fx, $scope.a, $scope.b);
 		  $scope.integralsK = [];
 		  $scope.integralsIK = [];
-		  $scope.n1 = 0;
+		  $scope.n1Pos = 0;
+		  $scope.n1Neg = 0;
 		  $scope.currentI = 0;
 		  
 		  $scope.randomPointsGreen = {};
@@ -146,11 +148,15 @@
 	   $scope.isInFunction = function (randomPoint) {
 		   var fderandom = $scope.mathFunction.eval({x: randomPoint.x});
 		   
-		   if((randomPoint.y <= fderandom && randomPoint.y >= 0) || (randomPoint.y >= fderandom && fderandom < 0 && randomPoint.y <= 0))  {
+		   if((randomPoint.y <= fderandom && randomPoint.y >= 0)) {
 			  $scope.randomPointsGreen.x.push(randomPoint.x);
 			  $scope.randomPointsGreen.y.push(randomPoint.y);
-			  $scope.n1++; 
-		   } else {
+			  $scope.n1Pos++; 
+		   } else if ((randomPoint.y >= fderandom && fderandom < 0 && randomPoint.y <= 0)) {
+			  $scope.randomPointsGreen.x.push(randomPoint.x);
+			  $scope.randomPointsGreen.y.push(randomPoint.y);
+			  $scope.n1Neg++; 
+		   }else {
 			  $scope.randomPointsRed.x.push(randomPoint.x);
 			  $scope.randomPointsRed.y.push(randomPoint.y);
 		   }
@@ -159,7 +165,9 @@
 	   
 	   $scope.calculateI = function (k) {
 		  var area = ($scope.b - $scope.a) * ($scope.c - $scope.cmin);
-		  var ik = ($scope.n1 / k) * area;
+		  var ikPos = ($scope.n1Pos / k) * area;
+		  var ikNeg = ($scope.n1Neg / k) * area;
+		  var ik = ikPos - ikNeg;
 		  $scope.integralsK.push(k);
 		  $scope.integralsIK.push(ik);
 		  $scope.currentI = ik.toFixed(2);
@@ -186,34 +194,64 @@
 	   };
 	   
 	   $scope.reset = function () {
-		  $scope.n1 = 0;
+		  $scope.n1Pos = 0;
+		  $scope.n1Neg = 0;
 		  $scope.integralsK = [];
 		  $scope.integralsIK = [];
 	   };
 	   
 	   $scope.reset();
 	   
-	   //$scope.fx = 'sin(x)';
 	   $scope.fx = 'sin(x^2)';
+	   //$scope.fx = 'sin(x)';
 	   //$scope.fx = 'x^2';
 	   $scope.a = -5;
 	   $scope.b = 5;
 	   $scope.n = 150;
+	   $scope.currentI = 0;
 	   
 	});
   </script>
   
   <div id="container" ng-controller="MySAppCtrl">
+	
 	<div id="header">	
-		<input matInput placeholder="F(x)" ng-model="fx">
-		<input matInput placeholder="n" ng-model="n"> 
-		<input matInput placeholder="a" ng-model="a">
-		<input matInput placeholder="b" ng-model="b">
-		<button type="button" ng-click="calc()">Calcular</button>
+		
+		<div class="input-group mb-3">
+		  <div class="input-group-prepend">
+			<span class="input-group-text" id="basic-addon1">F(x)</span>
+		  </div>
+		  <input type="text" class="form-control" aria-describedby="basic-addon1" ng-model="fx">
+		  
+		  <div class="input-group-prepend">
+			<span class="input-group-text" id="basic-addon1">n</span>
+		  </div>
+		  <input type="text" class="form-control" aria-describedby="basic-addon1" ng-model="n">
+		  
+		  <div class="input-group-prepend">
+			<span class="input-group-text" id="basic-addon1">a</span>
+		  </div>
+		  <input type="text" class="form-control" aria-describedby="basic-addon1" ng-model="a">
+		  
+		  <div class="input-group-prepend">
+			<span class="input-group-text" id="basic-addon1">b</span>
+		  </div>
+		  <input type="text" class="form-control" aria-describedby="basic-addon1" ng-model="b">
+		  
+		  <button type="button" class="btn btn-primary" ng-click="calc()">Calcular</button>
+		  
+		</div>
 	</div>
 	<div id="content">
 		<div id="fxPlot"></div>
-		<div>Ik: {{currentI}}</div>
+		
+		<div class="text-center"> 
+			<button type="button" class="btn btn-primary center-block">
+			  Ik= <span class="badge badge-light">{{currentI}}</span>
+			  <span class="sr-only">unread messages</span>
+			</button>
+		</div>
+		
 		<div id="ikPlot"></div>
 	</div>
   </div>
