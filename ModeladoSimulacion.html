@@ -17,15 +17,29 @@
   <script src="https://unpkg.com/mathjs@5.10.3/dist/math.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
   
+  <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
+  
   <script type="text/javascript">    
     var app = angular.module('MySApp', ['ngMaterial', 'ngMessages']);
 	
 	app.controller('MySAppCtrl', function($scope, $window) {
 	
 	  
+	   /*
+		Funcion principal que hace:
+			1. Dibuja el grafico de F(x)
+			2. Inicializa valores
+			3. Itera de 1 al valor ingresado n, y por cada uno:
+				3.1 Genera un punto aleatorio
+				3.2 Chequea si el punto aleatorio esta dentro de F(x) o no.
+				3.3 Actualiza el grafico de F(x) dibujando el punto aleatorio generado
+				3.4 Calcula Ik
+				3.5 Actualiza el grafico de las Ik
+	   */
 	   $scope.calc = function () {
 		  
 		  $scope.drawFx($scope.fx, $scope.a, $scope.b);
+		  
 		  $scope.integralsK = [];
 		  $scope.integralsIK = [];
 		  $scope.n1Pos = 0;
@@ -62,6 +76,9 @@
 		  
 	   };
 	   
+	   /*
+		1. Dibuja el grafico de F(x)
+	   */
 	   $scope.drawFx = function(fx, a, b) {
 			try {
 			  const expr = math.compile(fx);
@@ -96,6 +113,43 @@
 			}
 	   };
 	   
+	   /*
+		3.1 Genera un punto aleatorio
+	   */
+	   $scope.getRandomPoint = function () {
+		  var x = Math.random() * ($scope.b - $scope.a) + parseInt($scope.a, 10);
+		  var y = Math.random() * ($scope.c - $scope.cmin) + parseFloat($scope.cmin);
+		  var point = {};
+		  point.x = x;
+		  point.y = y;
+	
+		  return point;
+	   };
+	   
+	   /*
+	    3.2 Chequea si el punto aleatorio esta dentro de F(x) o no.
+	   */
+	   $scope.isInFunction = function (randomPoint) {
+		   var fderandom = $scope.mathFunction.eval({x: randomPoint.x});
+		   
+		   if((randomPoint.y <= fderandom && randomPoint.y >= 0)) {
+			  $scope.randomPointsGreen.x.push(randomPoint.x);
+			  $scope.randomPointsGreen.y.push(randomPoint.y);
+			  $scope.n1Pos++; 
+		   } else if ((randomPoint.y >= fderandom && fderandom < 0 && randomPoint.y <= 0)) {
+			  $scope.randomPointsGreen.x.push(randomPoint.x);
+			  $scope.randomPointsGreen.y.push(randomPoint.y);
+			  $scope.n1Neg++; 
+		   }else {
+			  $scope.randomPointsRed.x.push(randomPoint.x);
+			  $scope.randomPointsRed.y.push(randomPoint.y);
+		   }
+		    
+	   };
+	   
+	   /*
+	    3.3 Actualiza el grafico de F(x) dibujando el punto aleatorio generado
+	   */
 	   $scope.updateFx = function(fx, a, b) {
 			try {
 			  const expr = math.compile(fx);
@@ -124,45 +178,9 @@
 			}
 	   };
 	   
-	   $scope.getRectangle = function() {
-	     
-		  const points = {};
-		  points.type = 'scatter';
-		  points.x = [$scope.a,$scope.a,$scope.b,$scope.b];
-		  points.y = [$scope.cmin,$scope.c,$scope.c,$scope.cmin];
-		  points.name = 'R';
-		  
-		  return points;
-	   };
-	  
-	   $scope.getRandomPoint = function () {
-		  var x = Math.random() * ($scope.b - $scope.a) + parseInt($scope.a, 10);
-		  var y = Math.random() * ($scope.c - $scope.cmin) + parseFloat($scope.cmin);
-		  var point = {};
-		  point.x = x;
-		  point.y = y;
-	
-		  return point;
-	   };
-
-	   $scope.isInFunction = function (randomPoint) {
-		   var fderandom = $scope.mathFunction.eval({x: randomPoint.x});
-		   
-		   if((randomPoint.y <= fderandom && randomPoint.y >= 0)) {
-			  $scope.randomPointsGreen.x.push(randomPoint.x);
-			  $scope.randomPointsGreen.y.push(randomPoint.y);
-			  $scope.n1Pos++; 
-		   } else if ((randomPoint.y >= fderandom && fderandom < 0 && randomPoint.y <= 0)) {
-			  $scope.randomPointsGreen.x.push(randomPoint.x);
-			  $scope.randomPointsGreen.y.push(randomPoint.y);
-			  $scope.n1Neg++; 
-		   }else {
-			  $scope.randomPointsRed.x.push(randomPoint.x);
-			  $scope.randomPointsRed.y.push(randomPoint.y);
-		   }
-		    
-	   };
-	   
+	   /*
+		3.4 Calcula Ik
+	   */
 	   $scope.calculateI = function (k) {
 		  var area = ($scope.b - $scope.a) * ($scope.c - $scope.cmin);
 		  var ikPos = ($scope.n1Pos / k) * area;
@@ -174,6 +192,9 @@
 		  $scope.$apply()
 	   };
 	 
+	   /*
+	    3.5 Actualiza el grafico de las Ik
+	   */
 	   $scope.updateIkGraph = function() {
 			try {
 			  
@@ -193,6 +214,17 @@
 			}
 	   };
 	   
+	    $scope.getRectangle = function() {
+	     
+		  const points = {};
+		  points.type = 'scatter';
+		  points.x = [$scope.a,$scope.a,$scope.b,$scope.b, $scope.a];
+		  points.y = [$scope.cmin,$scope.c,$scope.c,$scope.cmin, $scope.cmin];
+		  points.name = 'R';
+		  
+		  return points;
+	   };
+	   
 	   $scope.reset = function () {
 		  $scope.n1Pos = 0;
 		  $scope.n1Neg = 0;
@@ -203,11 +235,9 @@
 	   $scope.reset();
 	   
 	   $scope.fx = 'sin(x^2)';
-	   //$scope.fx = 'sin(x)';
-	   //$scope.fx = 'x^2';
 	   $scope.a = -5;
 	   $scope.b = 5;
-	   $scope.n = 150;
+	   $scope.n = 10;
 	   $scope.currentI = 0;
 	   
 	});
